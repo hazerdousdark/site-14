@@ -48,6 +48,12 @@ public sealed partial class MindRoleComponent : BaseMindRoleComponent
     public ProtoId<JobPrototype>? JobPrototype;
 
     /// <summary>
+    /// The alternate title chosen for this job role, if any.
+    /// </summary>
+    [DataField]
+    public ProtoId<JobAlternateTitlePrototype>? AlternateJobTitle;
+
+    /// <summary>
     /// Used to order the characters on by role/antag status. Highest numbers are shown first.
     /// </summary>
     [DataField]

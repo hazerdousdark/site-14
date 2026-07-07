@@ -56,6 +56,25 @@ public abstract partial class SharedRoleSystem : EntitySystem
             Log.Error($"Unknown JobRequirementOverridePrototype: {value}");
     }
 
+
+    /// <summary>
+    ///     Adds a mind role to a mind
+    /// </summary>
+    /// <param name="mindId">The mind entity to add the role to</param>
+    /// <param name="protoId">The mind role to add</param>
+    /// <param name="mind">If the mind component is provided, it will be checked if it belongs to the mind entity</param>
+    /// <param name="silent">If true, no briefing will be generated upon receiving the mind role</param>
+    public void MindAddRole(EntityUid mindId,
+    EntProtoId protoId,
+    MindComponent? mind = null,
+    bool silent = false)
+    {
+        if (protoId == "MindRoleJob")
+            MindAddJobRole(mindId, mind, silent, "");
+        else
+            MindAddRoleDo(mindId, protoId, mind, silent);
+    }
+
     /// <summary>
     ///     Adds multiple mind roles to a mind
     /// </summary>
@@ -63,10 +82,11 @@ public abstract partial class SharedRoleSystem : EntitySystem
     /// <param name="roles">The list of mind roles to add</param>
     /// <param name="mind">If the mind component is provided, it will be checked if it belongs to the mind entity</param>
     /// <param name="silent">If true, no briefing will be generated upon receiving the mind role</param>
+    /// <summary>
     public void MindAddRoles(EntityUid mindId,
-        List<EntProtoId>? roles,
-        MindComponent? mind = null,
-        bool silent = false)
+    List<EntProtoId>? roles,
+    MindComponent? mind = null,
+    bool silent = false)
     {
         if (roles is null || roles.Count == 0)
             return;
@@ -78,34 +98,18 @@ public abstract partial class SharedRoleSystem : EntitySystem
     }
 
     /// <summary>
-    ///     Adds a mind role to a mind
-    /// </summary>
-    /// <param name="mindId">The mind entity to add the role to</param>
-    /// <param name="protoId">The mind role to add</param>
-    /// <param name="mind">If the mind component is provided, it will be checked if it belongs to the mind entity</param>
-    /// <param name="silent">If true, no briefing will be generated upon receiving the mind role</param>
-    public void MindAddRole(EntityUid mindId,
-        EntProtoId protoId,
-        MindComponent? mind = null,
-        bool silent = false)
-    {
-        if (protoId == "MindRoleJob")
-            MindAddJobRole(mindId, mind, silent, "");
-        else
-            MindAddRoleDo(mindId, protoId, mind, silent);
-    }
-
-    /// <summary>
     /// Adds a Job mind role with the specified job prototype
     /// </summary>
-    /// /// <param name="mindId">The mind entity to add the job role to</param>
+    /// <param name="mindId">The mind entity to add the job role to</param>
     /// <param name="mind">If the mind component is provided, it will be checked if it belongs to the mind entity</param>
     /// <param name="silent">If true, no briefing will be generated upon receiving the mind role</param>
     /// <param name="jobPrototype">The Job prototype for the new role</param>
+    /// <param name="alternateJobTitle">The alternate title chosen for this job, if any</param>
     public void MindAddJobRole(EntityUid mindId,
         MindComponent? mind = null,
         bool silent = false,
-        string? jobPrototype = null)
+        string? jobPrototype = null,
+        ProtoId<JobAlternateTitlePrototype>? alternateJobTitle = null)
     {
         if (!Resolve(mindId, ref mind))
             return;
@@ -119,9 +123,10 @@ public abstract partial class SharedRoleSystem : EntitySystem
                 $"Job Role of {ToPrettyString(mind.OwnedEntity)} changed from '{jobRole.Value.Comp1.JobPrototype}' to '{jobPrototype}'");
 
             jobRole.Value.Comp1.JobPrototype = jobPrototype;
+            jobRole.Value.Comp1.AlternateJobTitle = alternateJobTitle;
         }
         else
-            MindAddRoleDo(mindId, "MindRoleJob", mind, silent, jobPrototype);
+            MindAddRoleDo(mindId, "MindRoleJob", mind, silent, jobPrototype, alternateJobTitle);
     }
 
     /// <summary>
@@ -131,7 +136,8 @@ public abstract partial class SharedRoleSystem : EntitySystem
         EntProtoId protoId,
         MindComponent? mind = null,
         bool silent = false,
-        string? jobPrototype = null)
+        string? jobPrototype = null,
+        ProtoId<JobAlternateTitlePrototype>? alternateJobTitle = null)
     {
         if (!Resolve(mindId, ref mind))
         {
@@ -160,6 +166,7 @@ public abstract partial class SharedRoleSystem : EntitySystem
         if (jobPrototype is not null)
         {
             mindRoleComp.JobPrototype = jobPrototype;
+            mindRoleComp.AlternateJobTitle = alternateJobTitle;
             EnsureComp<JobRoleComponent>(mindRoleId.Value);
             DebugTools.AssertNull(mindRoleComp.AntagPrototype);
             DebugTools.Assert(!mindRoleComp.Antag);

@@ -145,7 +145,7 @@ namespace Content.Server.GameTicking
 
             if (jobId != null)
             {
-                var jobs = new List<ProtoId<JobPrototype>> {jobId};
+                var jobs = new List<ProtoId<JobPrototype>> { jobId };
                 var ev = new IsRoleAllowedEvent(player, jobs, null);
                 RaiseLocalEvent(ref ev);
                 if (ev.Cancelled)
@@ -358,7 +358,9 @@ namespace Content.Server.GameTicking
 
             _mind.TransferTo(newMind, mob);
 
-            _roles.MindAddJobRole(newMind, silent: silent, jobPrototype: jobId);
+            character.JobAlternateTitles.TryGetValue(jobId, out var altTitleId);
+            _roles.MindAddJobRole(newMind, silent: silent, jobPrototype: jobId, alternateJobTitle: altTitleId);
+
             jobName = _jobs.MindTryGetJobName(newMind);
             _admin.UpdatePlayerList(player);
         }

@@ -65,6 +65,14 @@ namespace Content.Shared.Preferences
         [DataField]
         private Dictionary<string, RoleLoadout> _loadouts = new();
 
+        /// <summary>
+        /// <see cref="JobAlternateTitles"/>
+        /// </summary>
+        public IReadOnlyDictionary<ProtoId<JobPrototype>, ProtoId<JobAlternateTitlePrototype>> JobAlternateTitles => _jobAlternateTitles;
+
+        [DataField]
+        private Dictionary<ProtoId<JobPrototype>, ProtoId<JobAlternateTitlePrototype>> _jobAlternateTitles = new();
+
         [DataField]
         public string Name { get; set; } = "John Doe";
 
@@ -183,6 +191,7 @@ namespace Content.Shared.Preferences
                 new HashSet<ProtoId<TraitPrototype>>(other.TraitPreferences),
                 new Dictionary<string, RoleLoadout>(other.Loadouts))
         {
+            _jobAlternateTitles = new Dictionary<ProtoId<JobPrototype>, ProtoId<JobAlternateTitlePrototype>>(other._jobAlternateTitles);
         }
 
         /// <summary>
@@ -333,6 +342,18 @@ namespace Content.Shared.Preferences
             };
         }
 
+        public HumanoidCharacterProfile WithJobAltTitle(ProtoId<JobPrototype> jobId, ProtoId<JobAlternateTitlePrototype>? jobTitle)
+        {
+            var dictionary = new Dictionary<ProtoId<JobPrototype>, ProtoId<JobAlternateTitlePrototype>>(_jobAlternateTitles);
+
+            if (jobTitle is null)
+                dictionary.Remove(jobId);
+            else
+                dictionary[jobId] = jobTitle.Value;
+
+            return new(this) { _jobAlternateTitles = dictionary };
+        }
+
         public HumanoidCharacterProfile WithJobPriority(ProtoId<JobPrototype> jobId, JobPriority priority)
         {
             var dictionary = new Dictionary<ProtoId<JobPrototype>, JobPriority>(_jobPriorities);
@@ -371,7 +392,7 @@ namespace Content.Shared.Preferences
         {
             return new(this)
             {
-                _antagPreferences = new (antagPreferences),
+                _antagPreferences = new(antagPreferences),
             };
         }
 
@@ -474,6 +495,7 @@ namespace Content.Shared.Preferences
             if (!_traitPreferences.SequenceEqual(other._traitPreferences)) return false;
             if (!Loadouts.SequenceEqual(other.Loadouts)) return false;
             if (FlavorText != other.FlavorText) return false;
+            if (!_jobAlternateTitles.SequenceEqual(other._jobAlternateTitles)) return false;
             return Appearance.Equals(other.Appearance);
         }
 
@@ -729,6 +751,7 @@ namespace Content.Shared.Preferences
             hashCode.Add(Appearance);
             hashCode.Add((int)SpawnPriority);
             hashCode.Add((int)PreferenceUnavailable);
+            hashCode.Add(_jobAlternateTitles);
             return hashCode.ToHashCode();
         }
 

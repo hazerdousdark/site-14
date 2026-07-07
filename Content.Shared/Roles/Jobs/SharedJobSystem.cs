@@ -4,6 +4,9 @@ using Content.Shared.Players.PlayTimeTracking;
 using Content.Shared.Roles.Components;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
+using Content.Shared.Humanoid;
+using Content.Shared.Mind;
+
 
 namespace Content.Shared.Roles.Jobs;
 
@@ -181,6 +184,16 @@ public abstract partial class SharedJobSystem : EntitySystem
     /// </summary>
     public bool MindTryGetJobName([NotNullWhen(true)] EntityUid? mindId, out string name)
     {
+        if (mindId is not null
+            && _roles.MindHasRole<JobRoleComponent>(mindId.Value, out var role)
+            && role.Value.Comp1.AlternateJobTitle is { } altTitleId
+            && ProtoMan.TryIndex(altTitleId, out var altTitleProto))
+        {
+            var gender = CompOrNull<HumanoidProfileComponent>(Comp<MindComponent>(mindId.Value).OwnedEntity)?.Gender;
+            name = altTitleProto.LocalizedName(gender);
+            return true;
+        }
+
         if (MindTryGetJob(mindId, out var prototype))
         {
             name = prototype.LocalizedName;

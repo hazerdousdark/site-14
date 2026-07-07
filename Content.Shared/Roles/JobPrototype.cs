@@ -129,6 +129,9 @@ public sealed partial class JobPrototype : IPrototype
     public JobSpecial[] Special { get; private set; } = Array.Empty<JobSpecial>();
 
     [DataField]
+    public HashSet<ProtoId<JobAlternateTitlePrototype>>? AlternateTitles { get; private set; }
+
+    [DataField]
     public IReadOnlyCollection<ProtoId<AccessLevelPrototype>> Access = Array.Empty<ProtoId<AccessLevelPrototype>>();
 
     [DataField]

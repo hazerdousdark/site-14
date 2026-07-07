@@ -2,6 +2,7 @@ using System.Linq;
 using System.Numerics;
 using Content.Client.Lobby.UI.Loadouts;
 using Content.Client.Lobby.UI.Roles;
+using Content.Shared.CCVar;
 using Content.Shared.Clothing;
 using Content.Shared.Preferences;
 using Content.Shared.Preferences.Loadouts;
@@ -207,7 +208,35 @@ public sealed partial class HumanoidProfileEditor
                 };
                 var jobIcon = _prototypeManager.Index(job.Icon);
                 icon.Texture = _sprite.Frame0(jobIcon.Icon);
-                selector.Setup(items, job.LocalizedName, 200, job.LocalizedDescription, icon, job.Guides);
+                var altJobTitlesEnable = _cfgManager.GetCVar(CCVars.ICAlternateJobTitlesEnable);
+                List<(ProtoId<JobAlternateTitlePrototype> Id, bool Locked)>? altTitleInfo = null;
+                ProtoId<JobAlternateTitlePrototype>? currentAlt = null;
+
+                if (job.AlternateTitles != null)
+                {
+                    var profile = (HumanoidCharacterProfile?)_preferencesManager.Preferences?.SelectedCharacter;
+                    altTitleInfo = new List<(ProtoId<JobAlternateTitlePrototype>, bool)>();
+                    var playTimes = _requirements.GetPlayTimes(_playerManager.LocalSession!);
+
+                    foreach (var titleId in job.AlternateTitles)
+                    {
+                        var isLocked = false;
+                        if (_prototypeManager.TryIndex(titleId, out var titleProto) && titleProto.Requirements != null)
+                        {
+                            foreach (var requirement in titleProto.Requirements)
+                            {
+                                if (!requirement.Check(_entManager, _prototypeManager, profile, playTimes, out _))
+                                {
+                                    isLocked = true;
+                                    break;
+                                }
+                            }
+                        }
+                        altTitleInfo.Add((titleId, isLocked));
+                    }
+                }
+
+                selector.Setup(items, job.LocalizedName, 280, job.LocalizedDescription, icon, job.Guides, altTitleInfo, currentAlt, _prototypeManager);
 
                 if (!_requirements.IsAllowed(job, (HumanoidCharacterProfile?)_preferencesManager.Preferences?.SelectedCharacter, out var reason))
                 {
@@ -217,6 +246,14 @@ public sealed partial class HumanoidProfileEditor
                 {
                     selector.UnlockRequirements();
                 }
+
+                selector.OnSelectedTitle += selectedTitle =>
+                {
+                    if (!altJobTitlesEnable)
+                        return;
+                    Profile = Profile?.WithJobAltTitle(job.ID, selectedTitle);
+                    SetDirty();
+                };
 
                 selector.OnSelected += selectedPrio =>
                 {
